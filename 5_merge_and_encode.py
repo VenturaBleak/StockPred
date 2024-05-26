@@ -29,9 +29,6 @@ combined_df = encoder.fit_transform(combined_df)
 # Add the original 'Ticker' column back to the DataFrame for reference
 combined_df['Ticker'] = original_ticker
 
-# Drop unnecessary columns
-
-
 # Reorder columns to have Date and Ticker first
 combined_df = combined_df[['Date', 'Ticker'] + [col for col in combined_df.columns if col not in ['Date', 'Ticker']]]
 
@@ -44,7 +41,7 @@ if combined_df[numeric_cols].isna().sum().sum() > 0 or np.isinf(combined_df[nume
     raise ValueError("Invalid values found in the final dataset")
 
 # Determine the split date based on the specified number of most recent dates
-num_test_days = 250  # Number of most recent days to be used as test set
+num_test_days = 600  # Number of most recent days to be used as test set
 split_date = combined_df.index.get_level_values('Date').unique()[-num_test_days]
 
 # Split the dataset into training and test sets

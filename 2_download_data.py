@@ -6,7 +6,8 @@ import pandas_market_calendars as mcal
 
 # Define the list of tickers and the data folder
 stock_tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'JPM', 'GS', 'C',
-                    'IBM', 'INTC', 'AMD', 'QCOM', 'NFLX', 'DIS', 'SBUX', 'KO', 'PEP', 'MCD']
+                    'IBM', 'INTC', 'QCOM', 'NFLX', 'DIS', 'SBUX', 'KO', 'PEP', 'MCD',
+                    'WMT', 'COST', 'AMGN', 'GILD', 'PFE', 'MRK', 'JNJ', 'CVS', 'CI']
 data_folder = 'data/2_raw/'
 
 # Start and end date for data download, based on data ground truth
@@ -35,7 +36,7 @@ def is_data_up_to_date(file_path, valid_trading_days):
         return False
     file_start_date = df['Date'][df_trading_days].min()
     file_end_date = df['Date'][df_trading_days].max()
-    print(f"Checking dates for {file_path}: file start date = {file_start_date}, file end date = {file_end_date}")
+
     # Check if the file covers the full date range within a tolerance for the last few trading days
     tolerance_days = 2
     return file_start_date <= valid_trading_days.min() and file_end_date >= valid_trading_days[-tolerance_days]

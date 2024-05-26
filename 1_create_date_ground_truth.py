@@ -5,8 +5,8 @@ import numpy as np
 import os
 
 # Define the date range
-start_date = '2015-01-01'
-end_date = '2024-01-01'
+start_date = '2008-01-01'
+end_date = '2024-05-01'
 
 # Get the NYSE calendar
 nyse = mcal.get_calendar('NYSE')

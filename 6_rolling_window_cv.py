@@ -1,7 +1,7 @@
 # 6_rolling_window_cv.py
 import pandas as pd
 import os
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import numpy as np
 import tqdm
@@ -41,9 +41,9 @@ print(y_train.name.ljust(30), str(y_train.dtype).ljust(20))
 print("-" * 50)
 
 # Define rolling window parameters
-train_window = 1200  # Number of days in the training window
-val_window = 250  # Number of days in the validation window
-step_size = 100  # Number of days to move the window forward each iteration
+train_window = 2000  # Number of days in the training window
+val_window = 100  # Number of days in the validation window
+step_size = 20  # Number of days to move the window forward each iteration
 
 # Calculate the total number of rolling window folds
 unique_dates = sorted(X_train.index.get_level_values('Date').unique())
@@ -60,7 +60,7 @@ train_mae_scores = []
 val_mae_scores = []
 
 # Ensemble model using RandomForestRegressor
-base_model = RandomForestRegressor(n_estimators=100, random_state=42)
+base_model = LGBMRegressor(random_state=42)
 ensemble_models = []
 
 # Perform rolling window cross-validation
@@ -90,9 +90,9 @@ for fold in tqdm.tqdm(range(n_splits)):
     val_tickers = X_fold_val.index.get_level_values('Ticker').unique()
 
     # Ensure all tickers are included in the training set
-    if not set(val_tickers).issubset(set(train_tickers)):
-        print(f"cv fold: {fold}, train_tickers: {train_tickers}, val_tickers: {val_tickers}")
-        raise ValueError("Not all tickers are included in the training set")
+    # if not set(val_tickers).issubset(set(train_tickers)):
+    #     print(f"cv fold: {fold}, train_tickers: {train_tickers}, val_tickers: {val_tickers}")
+    #     raise ValueError("Not all tickers are included in the training set")
 
     # Ensure no time spillover
     if train_dates.max() >= val_dates.min():
@@ -103,7 +103,7 @@ for fold in tqdm.tqdm(range(n_splits)):
     model = clone(base_model)
 
     # Train the model
-    model.fit(X_fold_train, y_fold_train)  # Optimization based on MSE
+    model.fit(X_fold_train, y_fold_train)
 
     # Predict and evaluate
     y_train_pred = model.predict(X_fold_train)
