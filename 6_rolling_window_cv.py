@@ -42,7 +42,7 @@ print("-" * 50)
 
 # Define rolling window parameters
 train_window = 2000  # Number of days in the training window
-val_window = 100  # Number of days in the validation window
+val_window = 150  # Number of days in the validation window
 step_size = 20  # Number of days to move the window forward each iteration
 
 # Calculate the total number of rolling window folds
