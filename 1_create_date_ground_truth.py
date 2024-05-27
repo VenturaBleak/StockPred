@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # Define the date range
-start_date = '1990-01-01'
+start_date = '2010-01-01'
 end_date = '2024-05-01'
 
 # Get the NYSE calendar

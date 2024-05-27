@@ -1,11 +1,3 @@
-"""
-generate_dummy_data.py
-
-This script generates sophisticated synthetic time series data for testing and validation purposes.
-The data includes multiple features that influence the target variable. The data range is based
-on the ground truth dates.
-"""
-
 import os
 import pandas as pd
 import numpy as np
@@ -17,6 +9,10 @@ class DummyDataGenerator:
         os.makedirs(self.data_folder, exist_ok=True)
         self.ground_truth_dates = pd.read_csv(ground_truth_file)
         self.ground_truth_dates['Date'] = pd.to_datetime(self.ground_truth_dates['Date'])
+
+        # Delete files in the folder
+        for file in os.listdir(self.data_folder):
+            os.remove(os.path.join(self.data_folder, file))
 
     def generate_features(self, n, random_seed=None):
         """
@@ -47,7 +43,7 @@ class DummyDataGenerator:
 
         return features
 
-    def generate_target(self, features, random_seed=None, noise_level=2):
+    def generate_target(self, features, random_seed=None, noise_level=2, mode='feature_dependent', start_value=0, sine_range=6):
         """
         Constructs the target variable using the generated features.
 
@@ -55,6 +51,9 @@ class DummyDataGenerator:
             features (pd.DataFrame): DataFrame containing the generated features.
             random_seed (int): Random seed for reproducibility.
             noise_level (float): The standard deviation of the noise.
+            mode (str): Mode of target generation - 'feature_dependent', 'feature_independent', 'sine_feature'.
+            start_value (float): Starting value for the trend.
+            sine_range (float): Range for sine cycles.
 
         Returns:
             pd.Series: The constructed target variable.
@@ -63,47 +62,60 @@ class DummyDataGenerator:
             np.random.seed(random_seed)
 
         n = len(features)
-        # Introduce variability in the trend
-        trend_start = np.random.uniform(-100, 100)
-        trend_direction = np.random.choice([-1, 1])
-        trend_magnitude = np.random.uniform(0.5, 1.5)
-        trend = trend_start + trend_direction * trend_magnitude * np.linspace(0, 50, n)
+        # Generate trend and seasonal components
+        # random start value between 0 and 100
+        start_value = np.random.uniform(0, 100)
+        # random sine range between 5 and 100
+        sine_range = np.random.uniform(5, 100)
+        trend = start_value + np.linspace(np.random.uniform(-100, 100), np.random.uniform(-100, 100), n)
+        seasonal = 10 * np.sin(np.linspace(0, sine_range * np.pi, n))
+        noise = noise_level
 
-        # Introduce variability in the seasonal component
-        seasonal_period = np.random.randint(50, 3000)
-        seasonal_magnitude = np.random.uniform(5, 20)
-        seasonal = seasonal_magnitude * np.sin(np.linspace(0, 2 * np.pi * (n / seasonal_period), n))
-
-        noise = np.random.randn(n) * noise_level
-
-        target = features['Feature1'] * 0.5 + features['Feature2'] * 0.2 + \
-                 features['Feature3'] * 0.1 + features['Feature4'] * 0.2 + \
-                 trend + seasonal + noise
+        if mode == 'feature_dependent':
+            target = features['Feature1'] * 0.5 + features['Feature2'] * 0.2 + \
+                     features['Feature3'] * 0.1 + features['Feature4'] * 0.2 + \
+                     trend + seasonal + noise
+        elif mode == 'feature_independent':
+            target = trend + seasonal + noise
+        elif mode == 'sine':
+            target = 10 * np.sin(np.linspace(0, sine_range * np.pi, n)) + trend + noise
+        elif mode == 'sine_feature':
+            target = 10 * np.sin(np.linspace(0, sine_range * np.pi, n)) + \
+                     features['Feature1'] + features['Feature2'] + \
+                     features['Feature3'] + features['Feature4'] + \
+                     trend + noise
+        else:
+            raise ValueError("Mode must be 'feature_dependent', 'feature_independent', 'sine', or 'sine_feature'")
 
         return target
 
-    def generate_data(self, random_seed=None, noise_level=2):
+    def generate_data(self, ticker, random_seed=None, noise_level=2, mode='feature_dependent', start_value=0, sine_range=6):
         """
         Generates synthetic time series data including features and target variable.
 
         Args:
+            ticker (str): The ticker symbol for the generated data.
             random_seed (int): Random seed for reproducibility.
             noise_level (float): The standard deviation of the noise.
+            mode (str): Mode of target generation - 'feature_dependent', 'feature_independent', 'sine_feature'.
+            start_value (float): Starting value for the trend.
+            sine_range (float): Range for sine cycles.
 
         Returns:
             pd.DataFrame: DataFrame containing the synthetic data.
         """
         n = len(self.ground_truth_dates)
         features = self.generate_features(n, random_seed)
-        target = self.generate_target(features, random_seed, noise_level)
+        target = self.generate_target(features, random_seed, noise_level, mode, start_value, sine_range)
 
-        df = self.ground_truth_dates.copy()
+        df = self.ground_truth_dates[['Date']].copy()
         df = pd.concat([df, features], axis=1)
         df['Target'] = target
+        df['Ticker'] = ticker
 
         return df
 
-    def save_data(self, df, filename='dummy_data.csv'):
+    def save_data(self, df, filename):
         """
         Saves the DataFrame as a CSV file.
 
@@ -131,9 +143,18 @@ class DummyDataGenerator:
         plt.show()
 
 if __name__ == "__main__":
-    data_folder = 'data/2_raw/'
-    ground_truth_file = 'data/1_ground_truth_dates.csv'
+    data_folder = os.path.join('data', '2_raw_dummy')
+    ground_truth_file = os.path.join('data', '1_ground_truth_dates.csv')
+    tickers = ['DUMMY1', 'DUMMY2', 'DUMMY3']
+    random_seeds = [42, 123, 456]
+
     generator = DummyDataGenerator(data_folder, ground_truth_file)
-    df_dummy = generator.generate_data(random_seed=1111, noise_level=0.05)
-    generator.save_data(df_dummy)
-    generator.visualize_data(df_dummy)
+
+    mode = 'sine'  # Change mode as needed: 'feature_dependent', 'feature_independent', 'sine_feature'
+    for ticker, seed in zip(tickers, random_seeds):
+        sine_range = np.random.uniform(1, 10)  # Randomize sine range for each ticker
+        start_value = np.random.uniform(-100, 100)  # Randomize start value for each ticker
+        df_dummy = generator.generate_data(ticker, random_seed=seed, noise_level=0, mode=mode, start_value=start_value, sine_range=sine_range)
+        filename = f'{ticker}_{mode}.csv'
+        generator.save_data(df_dummy, filename)
+        generator.visualize_data(df_dummy)

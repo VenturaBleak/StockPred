@@ -12,10 +12,18 @@ if prepare_data == 'yes':
     print("Creating time ground truth...")
     exec(open('1_create_date_ground_truth.py').read())
 
-    # Step 2: Download Data
-    print("-" * 50)
-    print("Downloading data...")
-    exec(open('2_download_data.py').read())
+    # if dummy data is used, generate dummy data, else download real data
+    use_dummy_data = input("Do you want to use dummy data? (yes/no): ").strip().lower()
+    if use_dummy_data == 'yes':
+        # Step 2b: Generate Dummy Data
+        print("-" * 50)
+        print("Generating dummy data...")
+        exec(open('2b_generate_dummy_data.py').read())
+    else:
+        # Step 2a: Download Data
+        print("-" * 50)
+        print("Downloading data...")
+        exec(open('2a_download_data.py').read())
 
     # Step 3: Preprocess Data
     print("-" * 50)
