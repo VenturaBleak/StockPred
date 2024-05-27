@@ -73,7 +73,23 @@ for feature in baseline_features:
     baseline_r2s[feature] = r2
     baseline_times[feature] = inference_time
 
-    print()
+# Create a comparison table
+comparison_table = pd.DataFrame({
+    'Model': ['Ensemble'] + list(baseline_features),
+    'MSE': [ensemble_mse] + [baseline_errors[feature] for feature in baseline_features],
+    'MAE': [ensemble_mae] + [baseline_maes[feature] for feature in baseline_features],
+    'R²': [ensemble_r2] + [baseline_r2s[feature] for feature in baseline_features],
+    'Inference Time': [ensemble_inference_time] + [baseline_times[feature] for feature in baseline_features]
+})
+
+comparison_table.to_csv(os.path.join('data/7_results', 'model_comparison.csv'), index=False)
+
+# Print baseline errors
+print(f"-"*50)
+print("Baseline Errors:")
+for feature, error in baseline_errors.items():
+    print(f"{feature} Baseline MSE: {error}, MAE: {baseline_maes[feature]}, R²: {baseline_r2s[feature]}, Inference Time: {baseline_times[feature]}")
+
 
 # Prepare the data for plotting
 plot_data = test_results_df.reset_index()
@@ -133,21 +149,5 @@ for ticker in tickers:
     os.makedirs(ticker_dir, exist_ok=True)
     plt.savefig(os.path.join(ticker_dir, f'model_vs_baseline_comparison_{ticker}.png'))
     plt.show()
-
-# Create a comparison table
-comparison_table = pd.DataFrame({
-    'Model': ['Ensemble'] + list(baseline_features),
-    'MSE': [ensemble_mse] + [baseline_errors[feature] for feature in baseline_features],
-    'MAE': [ensemble_mae] + [baseline_maes[feature] for feature in baseline_features],
-    'R²': [ensemble_r2] + [baseline_r2s[feature] for feature in baseline_features],
-    'Inference Time': [ensemble_inference_time] + [baseline_times[feature] for feature in baseline_features]
-})
-
-comparison_table.to_csv(os.path.join('data/7_results', 'model_comparison.csv'), index=False)
-
-# Print baseline errors
-print("Baseline Errors:")
-for feature, error in baseline_errors.items():
-    print(f"{feature} Baseline MSE: {error}, MAE: {baseline_maes[feature]}, R²: {baseline_r2s[feature]}, Inference Time: {baseline_times[feature]}")
 
 print("Evaluation complete.")
