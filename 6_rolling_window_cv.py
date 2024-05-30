@@ -1,12 +1,10 @@
 import pandas as pd
 import os
 from lightgbm import LGBMRegressor
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 import numpy as np
 import tqdm
 import logging
-import joblib
 from sklearn.base import clone
 
 # Define folders
@@ -61,7 +59,7 @@ for period in look_ahead_periods:
 print("-" * 50)
 
 # Define rolling window parameters
-train_window = 2500  # Number of days in the training window
+train_window = 3000  # Number of days in the training window
 val_window = 1  # Number of days in the validation window
 step_size = 1  # Number of days to move the window forward each iteration
 
@@ -74,15 +72,13 @@ print(f"Total number of dates in training set: {total_periods}")
 print(f"Total number of CV splits: {n_splits}")
 print(f"lookahead periods: {look_ahead_periods}")
 
-# Initialize lists to store results
+# Initialize lists to store results and predictions
 train_mse_scores = {f'Target_T{period}': [] for period in look_ahead_periods}
 val_mse_scores = {f'Target_T{period}': [] for period in look_ahead_periods}
+all_predictions = []
 
 # Use LightGBM Regressor
 base_model = LGBMRegressor(random_state=42)
-
-# Use RandomForest Regressor
-# base_model = RandomForestRegressor(random_state=42)
 
 # Perform rolling window cross-validation
 for fold in tqdm.tqdm(range(n_splits)):
@@ -120,17 +116,19 @@ for fold in tqdm.tqdm(range(n_splits)):
 
         train_mse_scores[target_col].append(train_mse)
         val_mse_scores[target_col].append(val_mse)
-        #
-        # # Add predictions to the training and validation sets for subsequent periods
-        # X_fold_train.loc[:, f'Pred_{target_col}'] = y_train_pred
-        # X_fold_val.loc[:, f'Pred_{target_col}'] = y_val_pred
-        #
-        # # Update X_train with new prediction features for next iterations
-        # X_train.loc[train_date_range[0]:train_date_range[-1], f'Pred_{target_col}'] = y_train_pred
-        # X_train.loc[val_date_range[0]:val_date_range[-1], f'Pred_{target_col}'] = y_val_pred
-        #
-        # # Log the results for each period and fold
-        # logging.info(f"Fold {fold + 1}/{n_splits} - Train MSE {target_col}: {train_mse}, Val MSE {target_col}: {val_mse}")
+
+        # Log predictions for each fold
+        val_predictions = pd.DataFrame({
+            'Date': X_fold_val.index.get_level_values('Date'),
+            'Ticker': X_fold_val.index.get_level_values('Ticker'),
+            'Actual': y_fold_val,
+            'Predicted': y_val_pred,
+            'Target': target_col,
+            'Fold': fold
+        })
+        all_predictions.append(val_predictions)
+
+        print(f"Fold {fold + 1}/{n_splits} - Train MSE {target_col}: {train_mse}, Val MSE {target_col}: {val_mse}")
 
 # Save the results
 print("Saving results...")
@@ -139,5 +137,11 @@ results_dict.update({f'Val MSE {target_col}': val_mse_scores[target_col] for tar
 
 results_df = pd.DataFrame(results_dict)
 results_df.to_csv(os.path.join(results_folder, 'cv_results.csv'), index=False)
+
+# Save all predictions
+predictions_df = pd.concat(all_predictions)
+predictions_file = os.path.join(results_folder, 'all_predictions.csv')
+predictions_df.to_csv(predictions_file, index=False)
+print(f"Predictions saved to {predictions_file}")
 
 print("Rolling window cross-validation and model training complete.")

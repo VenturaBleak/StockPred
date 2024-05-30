@@ -63,29 +63,20 @@ class DummyDataGenerator:
 
         n = len(features)
         # Generate trend and seasonal components
-        # random start value between 0 and 100
-        start_value = np.random.uniform(0, 100)
-        # random sine range between 5 and 100
-        sine_range = np.random.uniform(5, 100)
         trend = start_value + np.linspace(np.random.uniform(-100, 100), np.random.uniform(-100, 100), n)
         seasonal = 10 * np.sin(np.linspace(0, sine_range * np.pi, n))
         noise = noise_level
 
         if mode == 'feature_dependent':
-            target = features['Feature1'] * 0.5 + features['Feature2'] * 0.2 + \
-                     features['Feature3'] * 0.1 + features['Feature4'] * 0.2 + \
+            target = features['Feature1'] * np.random.uniform(0.1, 0.5) + \
+                        features['Feature2'] * np.random.uniform(0.1, 0.5) + \
+                        features['Feature3'] * np.random.uniform(0.1, 0.5) + \
+                        features['Feature4'] * np.random.uniform(0.1, 0.5) + \
                      trend + seasonal + noise
         elif mode == 'feature_independent':
             target = trend + seasonal + noise
-        elif mode == 'sine':
-            target = 10 * np.sin(np.linspace(0, sine_range * np.pi, n)) + trend + noise
-        elif mode == 'sine_feature':
-            target = 10 * np.sin(np.linspace(0, sine_range * np.pi, n)) + \
-                     features['Feature1'] + features['Feature2'] + \
-                     features['Feature3'] + features['Feature4'] + \
-                     trend + noise
         else:
-            raise ValueError("Mode must be 'feature_dependent', 'feature_independent', 'sine', or 'sine_feature'")
+            raise ValueError("Mode must be 'feature_dependent' or 'feature_independent'")
 
         return target
 
@@ -150,9 +141,9 @@ if __name__ == "__main__":
 
     generator = DummyDataGenerator(data_folder, ground_truth_file)
 
-    mode = 'sine'  # Change mode as needed: 'feature_dependent', 'feature_independent', 'sine_feature'
+    mode = 'feature_dependent'  # Change mode as needed: 'feature_dependent', 'feature_independent'
     for ticker, seed in zip(tickers, random_seeds):
-        sine_range = np.random.uniform(1, 10)  # Randomize sine range for each ticker
+        sine_range = np.random.uniform(20, 100)  # Randomize sine range for each ticker
         start_value = np.random.uniform(-100, 100)  # Randomize start value for each ticker
         df_dummy = generator.generate_data(ticker, random_seed=seed, noise_level=0, mode=mode, start_value=start_value, sine_range=sine_range)
         filename = f'{ticker}_{mode}.csv'
