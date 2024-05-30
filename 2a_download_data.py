@@ -53,8 +53,11 @@ class AlphaVantageClient(APIClient):
 
             if function == 'OVERVIEW':
                 df = pd.DataFrame([data])
-            else:
+
+            if function == 'INCOME_STATEMENT' or function == 'BALANCE_SHEET' or function == 'CASH_FLOW':
                 df = pd.DataFrame(data['annualReports'])
+            if function == 'EARNINGS':
+                df = pd.DataFrame(data['quarterlyEarnings'])
             return df
         else:
             raise ValueError(f"Error retrieving data: {response.content}")

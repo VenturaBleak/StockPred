@@ -136,8 +136,11 @@ class DummyDataGenerator:
 if __name__ == "__main__":
     data_folder = os.path.join('data', '2_raw_dummy')
     ground_truth_file = os.path.join('data', '1_ground_truth_dates.csv')
-    tickers = ['DUMMY1', 'DUMMY2', 'DUMMY3']
-    random_seeds = [42, 123, 456]
+    # for loop over multiple tickers and random seeds
+    # specify number of tickers
+    number_of_tickers = 50
+    tickers = [f'Ticker{i}' for i in range(number_of_tickers)]
+    random_seeds = [i for i in range(number_of_tickers)]
 
     generator = DummyDataGenerator(data_folder, ground_truth_file)
 

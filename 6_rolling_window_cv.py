@@ -59,9 +59,9 @@ for period in look_ahead_periods:
 print("-" * 50)
 
 # Define rolling window parameters
-train_window = 3000  # Number of days in the training window
-val_window = 1  # Number of days in the validation window
-step_size = 1  # Number of days to move the window forward each iteration
+train_window = 2000  # Number of days in the training window
+step_size = 40  # Number of days to move the window forward each iteration
+val_window = step_size  # Number of days in the validation window, equal to step size
 
 # Calculate the total number of rolling window folds
 unique_dates = sorted(X_train.index.get_level_values('Date').unique())
