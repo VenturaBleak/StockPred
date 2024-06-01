@@ -31,6 +31,7 @@ date_df['Quarter'] = date_df['Date'].dt.quarter
 # is ultimo, i.e. last trading day of the month -> that is the day before the first day of the next month
 
 
+
 # Add cyclical features
 date_df['Sin_DayOfYear'] = np.sin(2 * np.pi * date_df['DayOfYear'] / 365)
 date_df['Cos_DayOfYear'] = np.cos(2 * np.pi * date_df['DayOfYear'] / 365)
@@ -44,6 +45,9 @@ date_df['Sin_WeekOfMonth'] = np.sin(2 * np.pi * date_df['WeekOfMonth'] / 4.45)
 date_df['Cos_WeekOfMonth'] = np.cos(2 * np.pi * date_df['WeekOfMonth'] / 4.45)
 date_df['Sin_Quarter'] = np.sin(2 * np.pi * date_df['Quarter'] / 4)
 date_df['Cos_Quarter'] = np.cos(2 * np.pi * date_df['Quarter'] / 4)
+
+# drop cycical non sine and cosine features
+date_df.drop(columns=['DayOfYear', 'Month', 'Weekday', 'WeekOfYear', 'WeekOfMonth', 'Quarter'], inplace=True)
 
 # Save the ground truth date array
 output_folder = 'data'

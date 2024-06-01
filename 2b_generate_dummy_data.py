@@ -51,7 +51,7 @@ class DummyDataGenerator:
             features (pd.DataFrame): DataFrame containing the generated features.
             random_seed (int): Random seed for reproducibility.
             noise_level (float): The standard deviation of the noise.
-            mode (str): Mode of target generation - 'feature_dependent', 'feature_independent', 'sine_feature'.
+            mode (str): Mode of target generation - 'feature_dependent', 'feature_independent'.
             start_value (float): Starting value for the trend.
             sine_range (float): Range for sine cycles.
 
@@ -63,20 +63,27 @@ class DummyDataGenerator:
 
         n = len(features)
         # Generate trend and seasonal components
-        trend = start_value + np.linspace(np.random.uniform(-100, 100), np.random.uniform(-100, 100), n)
+        trend = start_value + np.linspace(np.random.uniform(-25, 30), np.random.uniform(-100, 100), n)
         seasonal = 10 * np.sin(np.linspace(0, sine_range * np.pi, n))
-        noise = noise_level
+        noise = noise_level * np.random.randn(n)
 
         if mode == 'feature_dependent':
-            target = features['Feature1'] * np.random.uniform(0.1, 0.5) + \
-                        features['Feature2'] * np.random.uniform(0.1, 0.5) + \
-                        features['Feature3'] * np.random.uniform(0.1, 0.5) + \
-                        features['Feature4'] * np.random.uniform(0.1, 0.5) + \
-                     trend + seasonal + noise
+            target = (features['Feature1'] * np.random.uniform(0.1, 0.5) +
+                      features['Feature2'] * np.random.uniform(0.1, 0.5) +
+                      features['Feature3'] * np.random.uniform(0.1, 0.5) +
+                      features['Feature4'] * np.random.uniform(0.1, 0.5) +
+                      trend + seasonal + noise)
         elif mode == 'feature_independent':
             target = trend + seasonal + noise
         else:
             raise ValueError("Mode must be 'feature_dependent' or 'feature_independent'")
+
+        # Ensure strictly positive target values
+        if (target <= 0).any():
+            invalid_indices = target[target <= 0].index
+            print("\033[91m" + f"Warning: Target values not strictly positive at indices: {invalid_indices.tolist()}" + "\033[0m")
+
+        assert (target > 0).all(), "Generated target values must be strictly positive."
 
         return target
 
@@ -101,7 +108,7 @@ class DummyDataGenerator:
 
         df = self.ground_truth_dates[['Date']].copy()
         df = pd.concat([df, features], axis=1)
-        df['Target'] = target
+        df['Target_Absolute'] = target
         df['Ticker'] = ticker
 
         return df
@@ -126,25 +133,28 @@ class DummyDataGenerator:
             df (pd.DataFrame): DataFrame containing the synthetic data.
         """
         plt.figure(figsize=(14, 7))
-        plt.plot(df['Date'], df['Target'], label='Target')
+        plt.plot(df['Date'], df['Target_Absolute'], label='Target_Absolute')
         plt.title('Target Variable Over Time')
         plt.xlabel('Date')
-        plt.ylabel('Target')
+        plt.ylabel('Target_Absolute')
         plt.legend()
         plt.show()
 
 if __name__ == "__main__":
     data_folder = os.path.join('data', '2_raw_dummy')
     ground_truth_file = os.path.join('data', '1_ground_truth_dates.csv')
-    tickers = ['DUMMY1', 'DUMMY2', 'DUMMY3']
-    random_seeds = [42, 123, 456]
+    # for loop over multiple tickers and random seeds
+    # specify number of tickers
+    number_of_tickers = 5
+    tickers = [f'Ticker{i}' for i in range(number_of_tickers)]
+    random_seeds = [i for i in range(number_of_tickers)]
 
     generator = DummyDataGenerator(data_folder, ground_truth_file)
 
     mode = 'feature_dependent'  # Change mode as needed: 'feature_dependent', 'feature_independent'
     for ticker, seed in zip(tickers, random_seeds):
         sine_range = np.random.uniform(20, 100)  # Randomize sine range for each ticker
-        start_value = np.random.uniform(-100, 100)  # Randomize start value for each ticker
+        start_value = np.random.uniform(100, 200)  # Randomize start value for each ticker
         df_dummy = generator.generate_data(ticker, random_seed=seed, noise_level=0, mode=mode, start_value=start_value, sine_range=sine_range)
         filename = f'{ticker}_{mode}.csv'
         generator.save_data(df_dummy, filename)
